@@ -1,0 +1,11 @@
+[
+  {
+    "client_id": "test-client",
+    "public_protocol": "tcp",
+    "public_ip": "0.0.0.0",
+    "public_port": 20000,
+    "internal_protocol": "tcp",
+    "internal_ip": "0.0.0.0",
+    "internal_port": 2000
+  }
+]
