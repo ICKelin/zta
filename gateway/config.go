@@ -30,13 +30,14 @@ func ParseConfig(confFile string) (*Config, error) {
 }
 
 type ListenerConfig struct {
-	ClientID         string `json:"client_id"`
-	PublicProtocol   string `json:"public_protocol"`
-	PublicIP         string `json:"public_ip"`
-	PublicPort       uint16 `json:"public_port"`
-	InternalProtocol string `json:"internal_protocol"`
-	InternalIP       string `json:"internal_ip"`
-	InternalPort     uint16 `json:"internal_port"`
+	ClientID         string                 `json:"client_id"`
+	PublicProtocol   string                 `json:"public_protocol"`
+	PublicIP         string                 `json:"public_ip"`
+	PublicPort       uint16                 `json:"public_port"`
+	InternalProtocol string                 `json:"internal_protocol"`
+	InternalIP       string                 `json:"internal_ip"`
+	InternalPort     uint16                 `json:"internal_port"`
+	HTTPParam        map[string]interface{} `json:"http_param"`
 }
 
 func ParseListenerConfig(confFile string) ([]*ListenerConfig, error) {

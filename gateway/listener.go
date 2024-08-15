@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/ICKelin/zta/common"
+	"github.com/ICKelin/zta/gateway/http_router"
 	"github.com/astaxie/beego/logs"
 	"io"
 	"net"
@@ -20,23 +21,40 @@ type Listener struct {
 	closeOnce      sync.Once
 	close          chan struct{}
 	tcpListener    net.Listener
+	httpRouter     http_router.HTTPRouter
 }
 
-func NewListener(listenerConfig *ListenerConfig, sessionMgr *SessionManager) *Listener {
+func NewListener(listenerConfig *ListenerConfig,
+	sessionMgr *SessionManager,
+	httpRouter http_router.HTTPRouter) *Listener {
 	return &Listener{
 		listenerConfig: listenerConfig,
 		close:          make(chan struct{}),
 		sessionMgr:     sessionMgr,
+		httpRouter:     httpRouter,
 	}
 }
 
 func (l *Listener) ListenAndServe() error {
 	switch l.listenerConfig.PublicProtocol {
+	case "http":
+		return l.listenAndServeHTTP()
 	case "tcp":
 		return l.listenAndServeTCP()
 	default:
 		return fmt.Errorf("TODO://")
 	}
+}
+
+func (l *Listener) listenAndServeHTTP() error {
+	// 更新http_router配置
+	err := l.httpRouter.UpdateRoute(l.listenerConfig.HTTPParam)
+	if err != nil {
+		return err
+	}
+
+	// 监听tcp
+	return l.listenAndServeTCP()
 }
 
 func (l *Listener) listenAndServeTCP() error {

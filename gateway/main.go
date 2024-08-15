@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/ICKelin/zta/gateway/http_router"
 )
 
 func main() {
@@ -22,8 +23,13 @@ func main() {
 	sessionMgr := NewSessionManager()
 
 	clientIDs := make([]string, 0)
+	httpRouter := http_router.NewApisixRoute(&http_router.ApisixConfig{
+		Api: "http://127.0.0.1:9180",
+		Key: "edd1c9f034335f136f87ad84b625c8f1",
+	})
+
 	for _, listenerConfig := range listenerConfigs {
-		listener := NewListener(listenerConfig, sessionMgr)
+		listener := NewListener(listenerConfig, sessionMgr, httpRouter)
 		go func() {
 			defer listener.Close()
 			err := listener.ListenAndServe()
