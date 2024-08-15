@@ -7,7 +7,12 @@ import (
 )
 
 type Config struct {
-	ListenerFile string `yaml:"listener_file"`
+	GatewayConfig *GatewayConfig `yaml:"gateway"`
+	ListenerFile  string         `yaml:"listener_file"`
+}
+
+type GatewayConfig struct {
+	ListenAddr string `yaml:"listen_addr"`
 }
 
 func ParseConfig(confFile string) (*Config, error) {

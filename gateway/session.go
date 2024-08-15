@@ -60,18 +60,6 @@ func (mgr *SessionManager) CreateSession(clientID string, conn net.Conn) (*Sessi
 	return sess, nil
 }
 
-func (mgr *SessionManager) CloseSession(clientID string) {
-	mgr.sessionsMu.Lock()
-	defer mgr.sessionsMu.Unlock()
-	sess := mgr.sessions[clientID]
-	if sess == nil {
-		return
-	}
-
-	sess.Connection.Close()
-	delete(mgr.sessions, clientID)
-}
-
 func (mgr *SessionManager) Range(f func(k string, v *Session) bool) {
 	mgr.sessionsMu.Lock()
 	defer mgr.sessionsMu.Unlock()

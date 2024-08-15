@@ -15,23 +15,23 @@ var (
 )
 
 type Listener struct {
-	pp          *common.ProxyProtocol
-	sessionMgr  *SessionManager
-	closeOnce   sync.Once
-	close       chan struct{}
-	tcpListener net.Listener
+	listenerConfig *ListenerConfig
+	sessionMgr     *SessionManager
+	closeOnce      sync.Once
+	close          chan struct{}
+	tcpListener    net.Listener
 }
 
-func NewListener(pp *common.ProxyProtocol, sessionMgr *SessionManager) *Listener {
+func NewListener(listenerConfig *ListenerConfig, sessionMgr *SessionManager) *Listener {
 	return &Listener{
-		pp:         pp,
-		close:      make(chan struct{}),
-		sessionMgr: sessionMgr,
+		listenerConfig: listenerConfig,
+		close:          make(chan struct{}),
+		sessionMgr:     sessionMgr,
 	}
 }
 
 func (l *Listener) ListenAndServe() error {
-	switch l.pp.PublicProtocol {
+	switch l.listenerConfig.PublicProtocol {
 	case "tcp":
 		return l.listenAndServeTCP()
 	default:
@@ -40,7 +40,7 @@ func (l *Listener) ListenAndServe() error {
 }
 
 func (l *Listener) listenAndServeTCP() error {
-	listenAddr := fmt.Sprintf("%s:%d", l.pp.PublicIP, l.pp.PublicPort)
+	listenAddr := fmt.Sprintf("%s:%d", l.listenerConfig.PublicIP, l.listenerConfig.PublicPort)
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return err
@@ -62,25 +62,34 @@ func (l *Listener) handleConn(conn net.Conn) {
 	defer conn.Close()
 
 	// 查询session
-	tunnelConn, err := l.sessionMgr.GetSessionByClientID(l.pp.ClientID)
+	tunnelConn, err := l.sessionMgr.GetSessionByClientID(l.listenerConfig.ClientID)
 	if err != nil {
-		logs.Warn("get session for client %s fail", l.pp.ClientID)
+		logs.Warn("get session for client %s fail", l.listenerConfig.ClientID)
 		return
 	}
 	defer tunnelConn.Close()
 
 	// 封装proxyprotocol
-	ppbody, err := l.pp.Encode()
+	pp := &common.ProxyProtocol{
+		ClientID:         l.listenerConfig.ClientID,
+		PublicProtocol:   l.listenerConfig.PublicProtocol,
+		PublicIP:         l.listenerConfig.PublicIP,
+		PublicPort:       l.listenerConfig.PublicPort,
+		InternalProtocol: l.listenerConfig.InternalProtocol,
+		InternalIP:       l.listenerConfig.InternalIP,
+		InternalPort:     l.listenerConfig.InternalPort,
+	}
+	ppBody, err := pp.Encode()
 	if err != nil {
-		logs.Warn("encode pp fail: %v ", err)
+		logs.Warn("encode listenerConfig fail: %v ", err)
 		return
 	}
 
 	tunnelConn.SetWriteDeadline(time.Now().Add(writeTimeout))
-	_, err = tunnelConn.Write(ppbody)
+	_, err = tunnelConn.Write(ppBody)
 	tunnelConn.SetWriteDeadline(time.Time{})
 	if err != nil {
-		logs.Warn("write pp body fail: %v", err)
+		logs.Warn("write listenerConfig body fail: %v", err)
 		return
 	}
 

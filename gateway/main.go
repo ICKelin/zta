@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/ICKelin/zta/common"
 )
 
 func main() {
@@ -22,16 +21,9 @@ func main() {
 
 	sessionMgr := NewSessionManager()
 
+	clientIDs := make([]string, 0)
 	for _, listenerConfig := range listenerConfigs {
-		listener := NewListener(&common.ProxyProtocol{
-			ClientID:         listenerConfig.ClientID,
-			PublicProtocol:   listenerConfig.PublicProtocol,
-			PublicIP:         listenerConfig.PublicIP,
-			PublicPort:       listenerConfig.PublicPort,
-			InternalProtocol: listenerConfig.InternalProtocol,
-			InternalIP:       listenerConfig.InternalIP,
-			InternalPort:     listenerConfig.InternalPort,
-		}, sessionMgr)
+		listener := NewListener(listenerConfig, sessionMgr)
 		go func() {
 			defer listener.Close()
 			err := listener.ListenAndServe()
@@ -39,9 +31,11 @@ func main() {
 				panic(err)
 			}
 		}()
+		clientIDs = append(clientIDs, listenerConfig.ClientID)
 	}
 
-	gw := NewGateway(":12359", sessionMgr)
+	gw := NewGateway(conf.GatewayConfig, sessionMgr)
+	gw.SetAvailableClientIDs(clientIDs)
 	err = gw.ListenAndServe()
 	if err != nil {
 		panic(err)

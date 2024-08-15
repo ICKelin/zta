@@ -1,1 +1,3 @@
-listener_file: ./proxy.json
+gateway:
+  listen_addr: ":12359"
+listener_file: ./listener.json

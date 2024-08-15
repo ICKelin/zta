@@ -8,9 +8,12 @@ import (
 )
 
 const (
+	version      = 0
 	cmdPP        = 0x0
 	cmdHandshake = 0x1
 )
+
+// 私有协议头部
 
 type ClientInfo struct {
 	ClientID         string
@@ -32,14 +35,9 @@ type ProxyProtocol struct {
 	InternalPort     uint16
 }
 
-// 1byte version
-// 1byte cmd
-// 2bytes length
-// length body
-
 func (pp *ProxyProtocol) Encode() ([]byte, error) {
 	hdr := make([]byte, 4)
-	hdr[0] = 0x0
+	hdr[0] = version
 	hdr[1] = cmdPP
 
 	body, err := json.Marshal(pp)
@@ -86,7 +84,7 @@ type HandshakeReq struct {
 
 func (req *HandshakeReq) Encode() ([]byte, error) {
 	hdr := make([]byte, 4)
-	hdr[0] = 0x0
+	hdr[0] = version
 	hdr[1] = cmdHandshake
 
 	body, err := json.Marshal(req)

@@ -8,21 +8,30 @@ import (
 )
 
 type Gateway struct {
-	ListenAddr string
+	conf       *GatewayConfig
+	clientIDs  map[string]struct{}
 	sessionMgr *SessionManager
 }
 
-func NewGateway(listenAddr string, sessionMgr *SessionManager) *Gateway {
+func NewGateway(conf *GatewayConfig, sessionMgr *SessionManager) *Gateway {
 	gw := &Gateway{
-		ListenAddr: listenAddr,
+		conf:       conf,
 		sessionMgr: sessionMgr,
 	}
 	go gw.checkOnlineInterval()
 	return gw
 }
 
+func (gw *Gateway) SetAvailableClientIDs(clientIDs []string) {
+	clientIDsMap := make(map[string]struct{})
+	for _, clientID := range clientIDs {
+		clientIDsMap[clientID] = struct{}{}
+	}
+	gw.clientIDs = clientIDsMap
+}
+
 func (gw *Gateway) ListenAndServe() error {
-	listener, err := net.Listen("tcp", gw.ListenAddr)
+	listener, err := net.Listen("tcp", gw.conf.ListenAddr)
 	if err != nil {
 		return err
 	}
@@ -43,6 +52,11 @@ func (gw *Gateway) handleConn(conn net.Conn) {
 	err := handshakeReq.Decode(conn)
 	if err != nil {
 		logs.Error("decode handshake fail: %v", err)
+		return
+	}
+
+	if _, ok := gw.clientIDs[handshakeReq.ClientID]; !ok {
+		logs.Warn("client %s is not configured", handshakeReq.ClientID)
 		return
 	}
 
