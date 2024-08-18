@@ -36,7 +36,7 @@ func (apisix *ApisixRouter) UpdateSSL(id, cert, key string, snis []string) error
 		"key":  key,
 		"snis": snis,
 	}
-	url := fmt.Sprintf("%s/apisix/admin/ssl/%s", apisix.conf.Api, id)
+	url := fmt.Sprintf("%s/apisix/admin/ssls/%s", apisix.conf.Api, id)
 	err := apisix.doReq("PUT", url, reqForm)
 	if err != nil {
 		return fmt.Errorf("create ssl fail: %v", err)

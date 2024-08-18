@@ -68,8 +68,10 @@ func ParseListenerConfig(confFile string) ([]*ListenerConfig, error) {
 type SSLConfig struct {
 	ID            string   `json:"id"`
 	HTTPRouteType string   `json:"http_route_type"`
-	Cert          string   `json:"cert"`
-	Key           string   `json:"key"`
+	Cert          string   `json:"-"`
+	Key           string   `json:"-"`
+	CertFile      string   `json:"cert_file"`
+	KeyFile       string   `json:"key_file"`
 	SNIs          []string `json:"snis"`
 }
 
@@ -79,10 +81,24 @@ func ParseSSLConfig(confFile string) ([]*SSLConfig, error) {
 		return nil, err
 	}
 
-	var cfg = make([]*SSLConfig, 0)
-	err = json.Unmarshal(content, &cfg)
+	var cfgs = make([]*SSLConfig, 0)
+	err = json.Unmarshal(content, &cfgs)
 	if err != nil {
 		return nil, err
 	}
-	return cfg, nil
+
+	for _, cfg := range cfgs {
+		// load cert and key from file
+		crt, err := os.ReadFile(cfg.CertFile)
+		if err != nil {
+			return nil, err
+		}
+		key, err := os.ReadFile(cfg.KeyFile)
+		if err != nil {
+			return nil, err
+		}
+		cfg.Cert = string(crt)
+		cfg.Key = string(key)
+	}
+	return cfgs, nil
 }
