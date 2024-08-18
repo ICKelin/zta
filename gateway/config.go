@@ -8,7 +8,15 @@ import (
 
 type Config struct {
 	GatewayConfig *GatewayConfig `yaml:"gateway"`
-	ListenerFile  string         `yaml:"listener_file"`
+	// route config
+	// eg:
+	//apisix: |
+	//	{
+	//		"api": "",
+	//		"key": ""
+	//	}
+	HttpRoutes   map[string]string `yaml:"http_routes"`
+	ListenerFile string            `yaml:"listener_file"`
 }
 
 type GatewayConfig struct {
@@ -37,6 +45,7 @@ type ListenerConfig struct {
 	InternalProtocol string                 `json:"internal_protocol"`
 	InternalIP       string                 `json:"internal_ip"`
 	InternalPort     uint16                 `json:"internal_port"`
+	HTTPRouteType    string                 `json:"http_route_type"`
 	HTTPParam        map[string]interface{} `json:"http_param"`
 }
 

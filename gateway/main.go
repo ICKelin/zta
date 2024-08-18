@@ -1,8 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
-	"github.com/ICKelin/zta/gateway/http_router"
+	"github.com/ICKelin/zta/gateway/http_route"
 )
 
 func main() {
@@ -10,26 +11,31 @@ func main() {
 	flag.StringVar(&confFile, "c", "", "config file")
 	flag.Parse()
 
+	// parse main config
 	conf, err := ParseConfig(confFile)
 	if err != nil {
 		panic(err)
 	}
 
+	// parse listener config file
 	listenerConfigs, err := ParseListenerConfig(conf.ListenerFile)
 	if err != nil {
 		panic(err)
 	}
 
-	sessionMgr := NewSessionManager()
+	// init global http route, for example apisix
+	for routeType, routeConfig := range conf.HttpRoutes {
+		err := http_route.InitRoute(routeType, json.RawMessage(routeConfig))
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	clientIDs := make([]string, 0)
-	httpRouter := http_router.NewApisixRoute(&http_router.ApisixConfig{
-		Api: "http://127.0.0.1:9180",
-		Key: "edd1c9f034335f136f87ad84b625c8f1",
-	})
-
+	sessionMgr := NewSessionManager()
+	// listening ports
 	for _, listenerConfig := range listenerConfigs {
-		listener := NewListener(listenerConfig, sessionMgr, httpRouter)
+		listener := NewListener(listenerConfig, sessionMgr)
 		go func() {
 			defer listener.Close()
 			err := listener.ListenAndServe()
@@ -40,6 +46,7 @@ func main() {
 		clientIDs = append(clientIDs, listenerConfig.ClientID)
 	}
 
+	// init tunnel gateway server
 	gw := NewGateway(conf.GatewayConfig, sessionMgr)
 	gw.SetAvailableClientIDs(clientIDs)
 	err = gw.ListenAndServe()

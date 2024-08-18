@@ -1,3 +1,10 @@
 gateway:
   listen_addr: ":12359"
+
+http_routes:
+  apisix: |
+    {
+      "api": "http://127.0.0.1:9180",
+      "key": "edd1c9f034335f136f87ad84b625c8f1"
+    }
 listener_file: ./listener.json

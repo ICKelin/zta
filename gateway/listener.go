@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/ICKelin/zta/common"
-	"github.com/ICKelin/zta/gateway/http_router"
+	"github.com/ICKelin/zta/gateway/http_route"
 	"github.com/astaxie/beego/logs"
 	"io"
 	"net"
@@ -21,17 +21,14 @@ type Listener struct {
 	closeOnce      sync.Once
 	close          chan struct{}
 	tcpListener    net.Listener
-	httpRouter     http_router.HTTPRouter
 }
 
 func NewListener(listenerConfig *ListenerConfig,
-	sessionMgr *SessionManager,
-	httpRouter http_router.HTTPRouter) *Listener {
+	sessionMgr *SessionManager) *Listener {
 	return &Listener{
 		listenerConfig: listenerConfig,
 		close:          make(chan struct{}),
 		sessionMgr:     sessionMgr,
-		httpRouter:     httpRouter,
 	}
 }
 
@@ -47,8 +44,14 @@ func (l *Listener) ListenAndServe() error {
 }
 
 func (l *Listener) listenAndServeHTTP() error {
+	route := http_route.GetRoute(l.listenerConfig.HTTPRouteType)
+	if route == nil {
+		return fmt.Errorf("route %s is not initialize",
+			l.listenerConfig.HTTPRouteType)
+	}
+
 	// 更新http_router配置
-	err := l.httpRouter.UpdateRoute(l.listenerConfig.HTTPParam)
+	err := route.UpdateRoute(l.listenerConfig.HTTPParam)
 	if err != nil {
 		return err
 	}
