@@ -28,7 +28,7 @@
     "http_route_type": "apisix",
     "http_param": {
       "id": "zta_localhost_10002",
-      "uri": "/",
+      "uri": "/*",
       "hosts": [
         "hulu2.byc.net"
       ],

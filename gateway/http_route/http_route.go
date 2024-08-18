@@ -14,6 +14,7 @@ var (
 )
 
 type HTTPRoute interface {
+	UpdateSSL(id, cert, key string, snis []string) error
 	UpdateRoute(param map[string]interface{}) error
 }
 

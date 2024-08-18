@@ -17,6 +17,7 @@ type Config struct {
 	//	}
 	HttpRoutes   map[string]string `yaml:"http_routes"`
 	ListenerFile string            `yaml:"listener_file"`
+	SSLFile      string            `yaml:"ssl_file"`
 }
 
 type GatewayConfig struct {
@@ -38,6 +39,7 @@ func ParseConfig(confFile string) (*Config, error) {
 }
 
 type ListenerConfig struct {
+	ID               string                 `json:"id"`
 	ClientID         string                 `json:"client_id"`
 	PublicProtocol   string                 `json:"public_protocol"`
 	PublicIP         string                 `json:"public_ip"`
@@ -56,6 +58,28 @@ func ParseListenerConfig(confFile string) ([]*ListenerConfig, error) {
 	}
 
 	var cfg = make([]*ListenerConfig, 0)
+	err = json.Unmarshal(content, &cfg)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
+
+type SSLConfig struct {
+	ID            string   `json:"id"`
+	HTTPRouteType string   `json:"http_route_type"`
+	Cert          string   `json:"cert"`
+	Key           string   `json:"key"`
+	SNIs          []string `json:"snis"`
+}
+
+func ParseSSLConfig(confFile string) ([]*SSLConfig, error) {
+	content, err := os.ReadFile(confFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var cfg = make([]*SSLConfig, 0)
 	err = json.Unmarshal(content, &cfg)
 	if err != nil {
 		return nil, err

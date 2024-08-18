@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"github.com/ICKelin/zta/gateway/http_route"
+	"github.com/astaxie/beego/logs"
 )
 
 func main() {
@@ -23,9 +24,24 @@ func main() {
 		panic(err)
 	}
 
+	// parse ssl config
+	sslConfigs, err := ParseSSLConfig(conf.SSLFile)
+	if err != nil {
+		panic(err)
+	}
+
 	// init global http route, for example apisix
 	for routeType, routeConfig := range conf.HttpRoutes {
 		err := http_route.InitRoute(routeType, json.RawMessage(routeConfig))
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// create ssl config
+	for _, sslConfig := range sslConfigs {
+		route := http_route.GetRoute(sslConfig.HTTPRouteType)
+		err := route.UpdateSSL(sslConfig.ID, sslConfig.Cert, sslConfig.Key, sslConfig.SNIs)
 		if err != nil {
 			panic(err)
 		}
@@ -40,7 +56,7 @@ func main() {
 			defer listener.Close()
 			err := listener.ListenAndServe()
 			if err != nil {
-				panic(err)
+				logs.Error("listener %s serve fail: %v", listenerConfig.ID, err)
 			}
 		}()
 		clientIDs = append(clientIDs, listenerConfig.ClientID)
@@ -54,3 +70,19 @@ func main() {
 		panic(err)
 	}
 }
+
+// WatchListenerFile change and callback f
+//func WatchListenerFile(file string, newestListeners []*Listener,
+//	f func(id string, conf *ListenerConfig)) {
+//	tick := time.NewTicker(time.Second * 3)
+//	defer tick.Stop()
+//	for range tick.C {
+//		listeners, err := ParseListenerConfig(file)
+//		if err != nil {
+//			logs.Warn("%v", err)
+//			continue
+//		}
+//
+//		newestListeners = listeners
+//	}
+//}
