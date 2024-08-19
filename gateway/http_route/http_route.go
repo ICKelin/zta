@@ -14,10 +14,20 @@ var (
 )
 
 type HTTPRoute interface {
+	// UpdateSSL update route ssl certificate and key
+	// id: uniq id
+	// cert: ssl certificate content
+	// key: ssl key content
+	// snis: domains
 	UpdateSSL(id, cert, key string, snis []string) error
+
+	// UpdateRoute update http route rule
+	// param: route configuration
 	UpdateRoute(param map[string]interface{}) error
 }
 
+// InitRoute create global route instance base on routeType and configuration
+// currently supports apisix only
 func InitRoute(routeType string, conf json.RawMessage) error {
 	if _, ok := routes[routeType]; ok {
 		return nil
@@ -36,6 +46,7 @@ func InitRoute(routeType string, conf json.RawMessage) error {
 	}
 }
 
+// GetRoute get global route instance of routeType
 func GetRoute(routeType string) HTTPRoute {
 	return routes[routeType]
 }

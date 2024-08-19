@@ -62,7 +62,6 @@ func (gw *Gateway) handleConn(conn net.Conn) {
 
 	logs.Debug("handshake from %s", handshakeReq.ClientID)
 
-	// 创建session
 	_, err = gw.sessionMgr.CreateSession(handshakeReq.ClientID, conn)
 	if err != nil {
 		logs.Error("create session fail: %v", err)

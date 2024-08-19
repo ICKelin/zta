@@ -11,4 +11,4 @@ GOOS=darwin GOARCH=arm64 go build -o release/zta-client_darwin_arm64 client/*.go
 GOOS=windows GOARCH=amd64 go build -o release/zta-gw_windows_amd64 gateway/*.go
 GOOS=windows GOARCH=amd64 go build -o release/zta-client_windows_amd64 client/*.go
 
-cp etc/* release/
+cp -r etc/* release/

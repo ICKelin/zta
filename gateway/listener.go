@@ -34,7 +34,7 @@ func NewListener(listenerConfig *ListenerConfig,
 
 func (l *Listener) ListenAndServe() error {
 	switch l.listenerConfig.PublicProtocol {
-	case "http":
+	case "http", "https":
 		return l.listenAndServeHTTP()
 	case "tcp":
 		return l.listenAndServeTCP()
@@ -50,13 +50,13 @@ func (l *Listener) listenAndServeHTTP() error {
 			l.listenerConfig.HTTPRouteType)
 	}
 
-	// 更新http_router配置
+	// update http_route rule
 	err := route.UpdateRoute(l.listenerConfig.HTTPParam)
 	if err != nil {
 		return err
 	}
 
-	// 监听tcp
+	// listening and serve tcp for http(s)
 	return l.listenAndServeTCP()
 }
 
@@ -82,7 +82,7 @@ func (l *Listener) listenAndServeTCP() error {
 func (l *Listener) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	// 查询session
+	// get session for clientID
 	tunnelConn, err := l.sessionMgr.GetSessionByClientID(l.listenerConfig.ClientID)
 	if err != nil {
 		logs.Warn("get session for client %s fail", l.listenerConfig.ClientID)
@@ -90,7 +90,7 @@ func (l *Listener) handleConn(conn net.Conn) {
 	}
 	defer tunnelConn.Close()
 
-	// 封装proxyprotocol
+	// encode and send pp to client
 	pp := &common.ProxyProtocol{
 		ClientID:         l.listenerConfig.ClientID,
 		PublicProtocol:   l.listenerConfig.PublicProtocol,
@@ -114,7 +114,7 @@ func (l *Listener) handleConn(conn net.Conn) {
 		return
 	}
 
-	// 双向数据拷贝
+	// copy from and copy to .
 	go func() {
 		defer tunnelConn.Close()
 		defer conn.Close()
