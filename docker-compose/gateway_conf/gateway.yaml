@@ -1,3 +1,5 @@
+auto_reload: true
+
 gateway:
   listen_addr: ":12359"
 

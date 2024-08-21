@@ -48,6 +48,7 @@ func main() {
 	}
 
 	clientIDs := make([]string, 0)
+	listenerMgr := NewListenerManager()
 	sessionMgr := NewSessionManager()
 	// listening ports
 	for _, listenerConfig := range listenerConfigs {
@@ -59,30 +60,19 @@ func main() {
 				logs.Error("listener %s serve fail: %v", listenerConfig.ID, err)
 			}
 		}()
+		listenerMgr.AddListener(listenerConfig.ID, listener)
 		clientIDs = append(clientIDs, listenerConfig.ClientID)
 	}
-
 	// init tunnel gateway server
 	gw := NewGateway(conf.GatewayConfig, sessionMgr)
 	gw.SetAvailableClientIDs(clientIDs)
+
+	if conf.AutoReload {
+		// watch listener file for add/delete listeners interval
+		go WatchListenerFile(gw, conf.ListenerFile, listenerMgr, sessionMgr, listenerConfigs)
+	}
 	err = gw.ListenAndServe()
 	if err != nil {
 		panic(err)
 	}
 }
-
-// WatchListenerFile change and callback f
-//func WatchListenerFile(file string, newestListeners []*Listener,
-//	f func(id string, conf *ListenerConfig)) {
-//	tick := time.NewTicker(time.Second * 3)
-//	defer tick.Stop()
-//	for range tick.C {
-//		listeners, err := ParseListenerConfig(file)
-//		if err != nil {
-//			logs.Warn("%v", err)
-//			continue
-//		}
-//
-//		newestListeners = listeners
-//	}
-//}

@@ -15,6 +15,31 @@ var (
 	writeTimeout = time.Second * 3
 )
 
+type ListenerManager struct {
+	listenersMu sync.Mutex
+	listeners   map[string]*Listener
+}
+
+func NewListenerManager() *ListenerManager {
+	return &ListenerManager{listeners: make(map[string]*Listener)}
+}
+
+func (mgr *ListenerManager) AddListener(id string, l *Listener) {
+	mgr.listenersMu.Lock()
+	defer mgr.listenersMu.Unlock()
+	mgr.listeners[id] = l
+}
+
+func (mgr *ListenerManager) CloseListener(id string) {
+	mgr.listenersMu.Lock()
+	defer mgr.listenersMu.Unlock()
+	l := mgr.listeners[id]
+	if l != nil {
+		l.Close()
+		delete(mgr.listeners, id)
+	}
+}
+
 type Listener struct {
 	listenerConfig *ListenerConfig
 	sessionMgr     *SessionManager

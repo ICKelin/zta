@@ -7,6 +7,7 @@ import (
 )
 
 type Config struct {
+	AutoReload    bool           `yaml:"auto_reload"`
 	GatewayConfig *GatewayConfig `yaml:"gateway"`
 	// route config
 	// eg:
