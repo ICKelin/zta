@@ -27,3 +27,6 @@ go.work.sum
 release
 
 .idea
+
+./gateway/web
+
