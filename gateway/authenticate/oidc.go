@@ -96,12 +96,6 @@ func (o *OIDC) handlePublicKeys(w http.ResponseWriter, r *http.Request) {
 func (o *OIDC) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
-	if r.Method == "GET" {
-		//loginPage(w, r)
-		http.ServeFile(w, r, "./web/index.html")
-		return
-	}
-
 	resp := o.server.NewResponse()
 	defer resp.Close()
 
@@ -122,6 +116,7 @@ func (o *OIDC) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		replyToUserAgent(w, nil, err)
 		return
 	}
+
 	userInfo := make(map[string]string)
 	err = json.Unmarshal(body, &userInfo)
 	if err != nil {
@@ -129,7 +124,6 @@ func (o *OIDC) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//user, ok := o.validateUser(ar.Client.GetId(), r.FormValue("username"), r.FormValue("password"))
 	user, ok := o.validateUser(ar.Client.GetId(), userInfo["username"], userInfo["password"])
 	if !ok {
 		replyToUserAgent(w, nil, fmt.Errorf("invalid user"))
@@ -246,6 +240,7 @@ func (o *OIDC) AddClient(clientID, clientSecret, redirectUri string) {
 		RedirectUri: redirectUri,
 		UserData:    nil,
 	}
+	// TODO: lock
 	o.memStorage.SetClient(clientID, c)
 }
 
@@ -255,20 +250,4 @@ func (o *OIDC) AddUser(clientID string, userInfo *UserInfo) {
 	o.usersMu.Lock()
 	defer o.usersMu.Unlock()
 	o.users[clientID] = append(o.users[clientID], userInfo)
-}
-
-func loginPage(w http.ResponseWriter, r *http.Request) bool {
-	w.Write([]byte("<html><body>"))
-
-	w.Write([]byte(fmt.Sprintf("LOGIN  (use test/test)<br/>")))
-	w.Write([]byte(fmt.Sprintf("<form action=\"/authorize?%s\" method=\"POST\">", r.URL.RawQuery)))
-
-	w.Write([]byte("Login: <input type=\"text\" name=\"login\" /><br/>"))
-	w.Write([]byte("Password: <input type=\"password\" name=\"password\" /><br/>"))
-	w.Write([]byte("<input type=\"submit\"/>"))
-
-	w.Write([]byte("</form>"))
-
-	w.Write([]byte("</body></html>"))
-	return true
 }
