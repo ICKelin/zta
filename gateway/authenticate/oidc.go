@@ -1,7 +1,10 @@
 package authenticate
 
 import (
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/astaxie/beego/logs"
 	"github.com/openshift/osin"
@@ -17,8 +20,9 @@ import (
 var _ Authenticate = &OIDC{}
 
 type OIDCConfig struct {
-	Issuer     string
-	ListenAddr string
+	Issuer     string `json:"issuer"`
+	ListenAddr string `json:"listen_addr"`
+	PrivateKey string `json:"private_key"`
 }
 
 type OIDC struct {
@@ -36,7 +40,13 @@ type OIDC struct {
 	users   map[string][]*UserInfo
 }
 
-func NewOIDC(conf *OIDCConfig, jwtSinger jose.Signer, publicKeys *jose.JsonWebKeySet) *OIDC {
+func NewOIDC(rawConf json.RawMessage) (*OIDC, error) {
+	var conf = &OIDCConfig{}
+	err := json.Unmarshal(rawConf, conf)
+	if err != nil {
+		return nil, err
+	}
+
 	data := map[string]interface{}{
 		"issuer":                                conf.Issuer,
 		"authorization_endpoint":                conf.Issuer + "/",
@@ -53,18 +63,52 @@ func NewOIDC(conf *OIDCConfig, jwtSinger jose.Signer, publicKeys *jose.JsonWebKe
 	}
 	wellKnown, _ := json.Marshal(data)
 
+	// Load signing key.
+	block, _ := pem.Decode([]byte(conf.PrivateKey))
+	if block == nil {
+		return nil, errors.New("failed to decode PEM block")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	// Configure jwtSigner and public keys.
+	privateKey := &jose.JsonWebKey{
+		Key:       key,
+		Algorithm: "RS256",
+		Use:       "sig",
+		KeyID:     "1", // KeyID should use the key thumbprint.
+	}
+
+	jwtSigner, err := jose.NewSigner(jose.RS256, privateKey)
+	if err != nil {
+		return nil, err
+	}
+	publicKeys := &jose.JsonWebKeySet{
+		Keys: []jose.JsonWebKey{
+			{
+				Key:       &key.PublicKey,
+				Algorithm: "RS256", // TODO:
+				Use:       "sig",
+				KeyID:     "1",
+			},
+		},
+	}
+
 	publicKeyBytes, _ := json.Marshal(publicKeys)
 
 	memStorage := NewMemStorage()
 	return &OIDC{
 		conf:       conf,
-		jwtSigner:  jwtSinger,
+		jwtSigner:  jwtSigner,
 		wellKnown:  wellKnown,
 		publicKeys: publicKeyBytes,
 		server:     osin.NewServer(osin.NewServerConfig(), memStorage),
 		users:      make(map[string][]*UserInfo),
 		memStorage: memStorage,
-	}
+	}, nil
 }
 
 func (o *OIDC) Serve() error {
