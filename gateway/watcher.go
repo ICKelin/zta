@@ -23,18 +23,18 @@ func WatchListenerFile(gw *Gateway,
 
 		added := getAddedListener(currentListenerConfigs, listenerConfigs)
 		deleted := getDeletedListener(currentListenerConfigs, listenerConfigs)
-
 		logs.Info("will add %d delete %d", len(added), len(deleted))
+
+		for _, conf := range deleted {
+			logs.Info("delete %+v", conf)
+			listenerMgr.CloseListener(conf.ID)
+		}
+
 		for _, conf := range added {
 			logs.Info("update/add %+v", conf)
 			l := NewListener(conf, sessionMgr)
 			go l.ListenAndServe()
 			listenerMgr.AddListener(conf.ID, l)
-		}
-
-		for _, conf := range deleted {
-			logs.Info("delete %+v", conf)
-			listenerMgr.CloseListener(conf.ID)
 		}
 		currentListenerConfigs = listenerConfigs
 

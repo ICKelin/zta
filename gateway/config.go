@@ -16,9 +16,11 @@ type Config struct {
 	//		"api": "",
 	//		"key": ""
 	//	}
-	HttpRoutes   map[string]string `yaml:"http_routes"`
-	ListenerFile string            `yaml:"listener_file"`
-	SSLFile      string            `yaml:"ssl_file"`
+	HttpRoutes map[string]string `yaml:"http_routes"`
+	// authenticate config
+	HTTPAuthenticate map[string]string `yaml:"http_authenticate"`
+	ListenerFile     string            `yaml:"listener_file"`
+	SSLFile          string            `yaml:"ssl_file"`
 }
 
 type GatewayConfig struct {

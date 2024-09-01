@@ -2,10 +2,20 @@
 
 正在尝试开发的一款零信任访问的项目，项目先从一个内网穿透开始做起，然后逐步加上认证功能。
 
+![img.png](architecture.png)
+
 如果您对项目感兴趣，可以通过B站和Youtube查看项目的演进过程。
 
 - [B站——呼噜聊网络](https://www.bilibili.com/video/BV1hFY7ekEiC)
 - [Youtube——呼噜聊网络](https://www.youtube.com/watch?v=uQLmmzyrS94&list=PLp5HQrfSZFiogfdDhlXjgxoWAIwiqqtAh)
+
+| 里程碑   | 功能描述                          | 状态 | 参考视频                                                                                                                                                   |
+|:------|:------------------------------|:---|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| MVP版本 | 完成最简单的TCP内网穿透                 | ✔  | [自己动手实现一个内网穿透3：MVP版本发布](https://www.bilibili.com/video/BV1x4YqedEQx/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326)                 |
+| HTTP内网穿透 | 结合Apisix实现一个内网穿透，实现复用80和443端口 | ✔  | [自己动手实现一个内网穿透5：里程碑2，接入Apisix实现HTTP内网穿透](https://www.bilibili.com/video/BV1eaegehEHj/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326) |
+| HTTP内网穿透+身份认证 | 基于OIDC协议实现身份认证功能，保护内网穿透的数据安全  | ✔  | [自己动手实现一个内网穿透8】里程碑3，给HTTP内网穿透加身份认证](https://www.bilibili.com/video/BV1Q8WkedEsu/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326)     |
+| TCP内网穿透+身份认证 | 实现原生TCP应用的身份认证功能              | ❌  |                                                                                                                                                        |
+| 可视化，安全防火方面的功能 | 内容待定                          | ❌  |                                                                                                                                                        |
 
 ## 运行
 ### 二进制文件运行

@@ -57,6 +57,7 @@ func (gw *Gateway) handleConn(conn net.Conn) {
 
 	if _, ok := gw.clientIDs[handshakeReq.ClientID]; !ok {
 		logs.Warn("client %s is not configured", handshakeReq.ClientID)
+		conn.Close()
 		return
 	}
 
