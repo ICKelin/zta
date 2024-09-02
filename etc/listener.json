@@ -1,5 +1,6 @@
 [
   {
+    "id": "1",
     "client_id": "test-client",
     "public_protocol": "tcp",
     "public_ip": "0.0.0.0",
@@ -9,6 +10,7 @@
     "internal_port": 2000
   },
   {
+    "id": "2",
     "client_id": "test-client",
     "public_protocol": "tcp",
     "public_ip": "0.0.0.0",
@@ -18,6 +20,7 @@
     "internal_port": 2001
   },
   {
+    "id": "3",
     "client_id": "test-client",
     "public_protocol": "http",
     "public_ip": "127.0.0.1",
@@ -36,6 +39,62 @@
         "type": "roundrobin",
         "nodes": {
           "127.0.0.1:10002": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "4",
+    "client_id": "oidc-test",
+    "public_protocol": "http",
+    "public_ip": "127.0.0.1",
+    "public_port": 10003,
+    "internal_protocol": "tcp",
+    "internal_ip": "127.0.0.1",
+    "internal_port": 2004,
+    "http_route_type": "apisix",
+    "http_param": {
+      "id": "zta_localhost_10003",
+      "uri": "/*",
+      "hosts": [
+        "app1.zta.beyondnetwork.net"
+      ],
+      "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+          "127.0.0.1:10003": 1
+        }
+      }
+    }
+  },
+  {
+    "id": "5",
+    "client_id": "oidc-test",
+    "public_protocol": "http",
+    "public_ip": "127.0.0.1",
+    "public_port": 10004,
+    "internal_protocol": "tcp",
+    "internal_ip": "127.0.0.1",
+    "internal_port": 2004,
+    "http_route_type": "apisix",
+    "http_param": {
+      "id": "zta_localhost_10004",
+      "uri": "/*",
+      "hosts": [
+        "app2.zta.beyondnetwork.net"
+      ],
+      "plugins": {
+        "openid-connect": {
+          "client_id": "test_app_id",
+          "client_secret": "it is a secret",
+          "discovery": "http://oidc.zta.beyondnetwork.net:14001/.well-known/openid-configuration",
+          "scope": "openid profile"
+        }
+      },
+      "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+          "127.0.0.1:10004": 1
         }
       }
     }

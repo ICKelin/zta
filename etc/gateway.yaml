@@ -16,7 +16,20 @@ http_authenticate:
       "issuer": "http://oidc.zta.beyondnetwork.net:14001",
       "private_key_file": "/opt/apps/zta/certs/oidc.key",
       "public_key_file": "/opt/apps/zta/certs/oidc.crt",
-      "listen_addr": ":14001"
+      "listen_addr": ":14001",
+      "clients": [
+        {
+          "client_id": "test_app_id",
+          "client_secret": "it is a secret",
+          "redirect_uri": "http://oidc.zta.beyondnetwork.net:9080/.apisix/redirect"
+          "users": [
+            {
+              "username": "hulunet",
+              "password": "password"
+            }
+          ]
+        }
+      ]
     }
 listener_file: /opt/apps/zta/etc/listener.json
 ssl_file: /opt/apps/zta/etc/ssl.json

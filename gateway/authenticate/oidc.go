@@ -42,11 +42,19 @@ type wellKnown struct {
 	ClaimsSupported                   []string `json:"claims_supported"`
 }
 
+type ClientInfo struct {
+	ClientID     string      `json:"client_id"`
+	ClientSecret string      `json:"client_secret"`
+	RedirectUri  string      `json:"redirect_uri"`
+	Users        []*UserInfo `json:"users"`
+}
+
 type OIDCConfig struct {
-	Issuer         string `json:"issuer"`
-	ListenAddr     string `json:"listen_addr"`
-	PrivateKeyFile string `json:"private_key_file"`
-	PublicKeyFile  string `json:"public_key_file"`
+	Issuer         string        `json:"issuer"`
+	ListenAddr     string        `json:"listen_addr"`
+	PrivateKeyFile string        `json:"private_key_file"`
+	PublicKeyFile  string        `json:"public_key_file"`
+	Clients        []*ClientInfo `json:"clients"`
 }
 
 type OIDC struct {
@@ -87,7 +95,7 @@ func NewOIDC(rawConf json.RawMessage) (*OIDC, error) {
 		return nil, err
 	}
 
-	content, err = os.ReadFile(conf.PrivateKeyFile)
+	content, err = os.ReadFile(conf.PublicKeyFile)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +124,7 @@ func NewOIDC(rawConf json.RawMessage) (*OIDC, error) {
 	publicKeyBytes, _ := json.Marshal(publicKeys)
 
 	memStorage := NewMemStorage()
-	return &OIDC{
+	oidc := &OIDC{
 		conf:       conf,
 		jwtSigner:  jwtSigner,
 		wellKnown:  wellKnownBytes,
@@ -124,7 +132,15 @@ func NewOIDC(rawConf json.RawMessage) (*OIDC, error) {
 		server:     osin.NewServer(osin.NewServerConfig(), memStorage),
 		users:      make(map[string][]*UserInfo),
 		memStorage: memStorage,
-	}, nil
+	}
+
+	for _, client := range conf.Clients {
+		oidc.AddClient(client.ClientID, client.ClientSecret, client.RedirectUri)
+		for _, user := range client.Users {
+			oidc.AddUser(client.ClientID, user)
+		}
+	}
+	return oidc, nil
 }
 
 func (o *OIDC) Serve() error {
