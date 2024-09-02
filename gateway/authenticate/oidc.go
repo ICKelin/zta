@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"github.com/astaxie/beego/logs"
 	jose "github.com/go-jose/go-jose/v4"
-	"github.com/go-jose/go-jose/v4/jose-util/generator"
 	"github.com/openshift/osin"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -86,56 +84,26 @@ func NewOIDC(rawConf json.RawMessage) (*OIDC, error) {
 	wellKnownBytes, _ := json.Marshal(buildInWellknown)
 
 	// jwt signer
-	content, err := os.ReadFile(conf.PrivateKeyFile)
+	signer, publicKeys, err := loadJws(conf.PrivateKeyFile, conf.PublicKeyFile)
 	if err != nil {
 		return nil, err
 	}
-	privateKey, err := generator.LoadPrivateKey(content)
-	if err != nil {
-		return nil, err
-	}
-
-	content, err = os.ReadFile(conf.PublicKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	publicKey, err := generator.LoadPublicKey(content)
-	if err != nil {
-		return nil, err
-	}
-
-	jwtSigner, err := jose.NewSigner(jose.SigningKey{
-		Algorithm: "RS256", // TODO
-		Key:       privateKey,
-	}, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	publicKeys := &jose.JSONWebKeySet{
-		Keys: []jose.JSONWebKey{
-			{
-				Key:       publicKey,
-				Algorithm: "RS256",
-				Use:       "sig",
-			},
-		},
-	}
-	publicKeyBytes, _ := json.Marshal(publicKeys)
 
 	memStorage := NewMemStorage()
 	oidc := &OIDC{
 		conf:       conf,
-		jwtSigner:  jwtSigner,
+		jwtSigner:  signer,
 		wellKnown:  wellKnownBytes,
-		publicKeys: publicKeyBytes,
+		publicKeys: publicKeys,
 		server:     osin.NewServer(osin.NewServerConfig(), memStorage),
 		users:      make(map[string][]*UserInfo),
 		memStorage: memStorage,
 	}
 
+	// initial clients
 	for _, client := range conf.Clients {
 		oidc.AddClient(client.ClientID, client.ClientSecret, client.RedirectUri)
+		// initial client users
 		for _, user := range client.Users {
 			oidc.AddUser(client.ClientID, user)
 		}
@@ -179,6 +147,8 @@ func (o *OIDC) handleAuthorization(w http.ResponseWriter, r *http.Request) {
 	ar := o.server.HandleAuthorizeRequest(resp, r)
 	if ar == nil {
 		if resp.InternalError != nil {
+			resp.InternalError = fmt.Errorf("get authorize request fail: %v", resp.InternalError)
+		} else {
 			resp.InternalError = fmt.Errorf("get authorize request fail")
 		}
 		replyToUserAgent(w, nil, resp.InternalError)

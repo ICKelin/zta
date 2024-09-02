@@ -3,7 +3,10 @@ package authenticate
 import (
 	"encoding/json"
 	"errors"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jose-util/generator"
 	"net/http"
+	"os"
 )
 
 var (
@@ -50,6 +53,51 @@ func RunAuthenticateService(authType string, conf json.RawMessage) error {
 		return errNotSupportedAuthType
 	}
 	return nil
+}
+
+func loadJws(privateKeyFile, publicKeyFile string) (jose.Signer, []byte, error) {
+	content, err := os.ReadFile(privateKeyFile)
+	if err != nil {
+		return nil, nil, err
+	}
+	privateKey, err := generator.LoadPrivateKey(content)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	content, err = os.ReadFile(publicKeyFile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	publicKey, err := generator.LoadPublicKey(content)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	jwtSigner, err := jose.NewSigner(jose.SigningKey{
+		Algorithm: "RS256", // TODO
+		Key:       privateKey,
+	}, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	publicKeys := &jose.JSONWebKeySet{
+		Keys: []jose.JSONWebKey{
+			{
+				Key:       publicKey,
+				Algorithm: "RS256",
+				Use:       "sig",
+			},
+		},
+	}
+	publicKeyBytes, err := json.Marshal(publicKeys)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return jwtSigner, publicKeyBytes, nil
 }
 
 // reply to web browser
