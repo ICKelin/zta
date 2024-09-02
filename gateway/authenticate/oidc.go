@@ -1,16 +1,15 @@
 package authenticate
 
 import (
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
-	"errors"
 	"fmt"
 	"github.com/astaxie/beego/logs"
+	jose "github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jose-util/generator"
 	"github.com/openshift/osin"
-	jose "gopkg.in/square/go-jose.v1"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,10 +18,35 @@ import (
 
 var _ Authenticate = &OIDC{}
 
+var buildInWellknown = &wellKnown{
+	ResponseTypesSupported:            []string{"code"},
+	SubjectTypesSupported:             []string{"public"},
+	IDTokenSigningAlgValuesSupported:  []string{"RS256"},
+	ScopesSupported:                   []string{"openid", "email", "profile"},
+	TokenEndpointAuthMethodsSupported: []string{"client_secret_basic"},
+	ClaimsSupported: []string{
+		"email",
+	},
+}
+
+type wellKnown struct {
+	Issuer                            string   `json:"issuer"`
+	AuthorizationEndpoint             string   `json:"authorization_endpoint"`
+	TokenEndpoint                     string   `json:"token_endpoint"`
+	JwksUri                           string   `json:"jwks_uri"`
+	ResponseTypesSupported            []string `json:"response_types_supported"`
+	SubjectTypesSupported             []string `json:"subject_types_supported"`
+	IDTokenSigningAlgValuesSupported  []string `json:"id_token_signing_alg_values_supported"`
+	ScopesSupported                   []string `json:"scopes_supported"`
+	TokenEndpointAuthMethodsSupported []string `json:"token_endpoint_auth_methods_supported"`
+	ClaimsSupported                   []string `json:"claims_supported"`
+}
+
 type OIDCConfig struct {
-	Issuer     string `json:"issuer"`
-	ListenAddr string `json:"listen_addr"`
-	PrivateKey string `json:"private_key"`
+	Issuer         string `json:"issuer"`
+	ListenAddr     string `json:"listen_addr"`
+	PrivateKeyFile string `json:"private_key_file"`
+	PublicKeyFile  string `json:"public_key_file"`
 }
 
 type OIDC struct {
@@ -47,63 +71,55 @@ func NewOIDC(rawConf json.RawMessage) (*OIDC, error) {
 		return nil, err
 	}
 
-	data := map[string]interface{}{
-		"issuer":                                conf.Issuer,
-		"authorization_endpoint":                conf.Issuer + "/",
-		"token_endpoint":                        conf.Issuer + "/token",
-		"jwks_uri":                              conf.Issuer + "/publickeys",
-		"response_types_supported":              []string{"code"},
-		"subject_types_supported":               []string{"public"},
-		"id_token_signing_alg_values_supported": []string{"RS256"},
-		"scopes_supported":                      []string{"openid", "email", "profile"},
-		"token_endpoint_auth_methods_supported": []string{"client_secret_basic"},
-		"claims_supported": []string{
-			"email",
-		},
-	}
-	wellKnown, _ := json.Marshal(data)
+	buildInWellknown.Issuer = conf.Issuer
+	buildInWellknown.AuthorizationEndpoint = conf.Issuer + "/"
+	buildInWellknown.TokenEndpoint = conf.Issuer + "/token"
+	buildInWellknown.JwksUri = conf.Issuer + "/publickeys"
+	wellKnownBytes, _ := json.Marshal(buildInWellknown)
 
-	// Load signing key.
-	block, _ := pem.Decode([]byte(conf.PrivateKey))
-	if block == nil {
-		return nil, errors.New("failed to decode PEM block")
+	// jwt signer
+	content, err := os.ReadFile(conf.PrivateKeyFile)
+	if err != nil {
+		return nil, err
 	}
-
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	privateKey, err := generator.LoadPrivateKey(content)
 	if err != nil {
 		return nil, err
 	}
 
-	// Configure jwtSigner and public keys.
-	privateKey := &jose.JsonWebKey{
-		Key:       key,
-		Algorithm: "RS256",
-		Use:       "sig",
-		KeyID:     "1", // KeyID should use the key thumbprint.
-	}
-
-	jwtSigner, err := jose.NewSigner(jose.RS256, privateKey)
+	content, err = os.ReadFile(conf.PrivateKeyFile)
 	if err != nil {
 		return nil, err
 	}
-	publicKeys := &jose.JsonWebKeySet{
-		Keys: []jose.JsonWebKey{
+	publicKey, err := generator.LoadPublicKey(content)
+	if err != nil {
+		return nil, err
+	}
+
+	jwtSigner, err := jose.NewSigner(jose.SigningKey{
+		Algorithm: "RS256", // TODO
+		Key:       privateKey,
+	}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKeys := &jose.JSONWebKeySet{
+		Keys: []jose.JSONWebKey{
 			{
-				Key:       &key.PublicKey,
-				Algorithm: "RS256", // TODO:
+				Key:       publicKey,
+				Algorithm: "RS256",
 				Use:       "sig",
-				KeyID:     "1",
 			},
 		},
 	}
-
 	publicKeyBytes, _ := json.Marshal(publicKeys)
 
 	memStorage := NewMemStorage()
 	return &OIDC{
 		conf:       conf,
 		jwtSigner:  jwtSigner,
-		wellKnown:  wellKnown,
+		wellKnown:  wellKnownBytes,
 		publicKeys: publicKeyBytes,
 		server:     osin.NewServer(osin.NewServerConfig(), memStorage),
 		users:      make(map[string][]*UserInfo),
@@ -284,7 +300,6 @@ func (o *OIDC) AddClient(clientID, clientSecret, redirectUri string) {
 		RedirectUri: redirectUri,
 		UserData:    nil,
 	}
-	// TODO: lock
 	o.memStorage.SetClient(clientID, c)
 }
 

@@ -1,11 +1,13 @@
 package authenticate
 
 import (
-	"fmt"
 	"github.com/openshift/osin"
+	"sync"
 )
 
 type MemStorage struct {
+	// a big mutex...
+	mu        sync.Mutex
 	clients   map[string]osin.Client
 	authorize map[string]*osin.AuthorizeData
 	access    map[string]*osin.AccessData
@@ -19,7 +21,6 @@ func NewMemStorage() *MemStorage {
 		access:    make(map[string]*osin.AccessData),
 		refresh:   make(map[string]string),
 	}
-
 	return r
 }
 
@@ -31,7 +32,8 @@ func (s *MemStorage) Close() {
 }
 
 func (s *MemStorage) GetClient(id string) (osin.Client, error) {
-	fmt.Printf("GetClient: %s\n", id)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if c, ok := s.clients[id]; ok {
 		return c, nil
 	}
@@ -39,19 +41,22 @@ func (s *MemStorage) GetClient(id string) (osin.Client, error) {
 }
 
 func (s *MemStorage) SetClient(id string, client osin.Client) error {
-	fmt.Printf("SetClient: %s\n", id)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.clients[id] = client
 	return nil
 }
 
 func (s *MemStorage) SaveAuthorize(data *osin.AuthorizeData) error {
-	fmt.Printf("SaveAuthorize: %s\n", data.Code)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.authorize[data.Code] = data
 	return nil
 }
 
 func (s *MemStorage) LoadAuthorize(code string) (*osin.AuthorizeData, error) {
-	fmt.Printf("LoadAuthorize: %s\n", code)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if d, ok := s.authorize[code]; ok {
 		return d, nil
 	}
@@ -59,13 +64,15 @@ func (s *MemStorage) LoadAuthorize(code string) (*osin.AuthorizeData, error) {
 }
 
 func (s *MemStorage) RemoveAuthorize(code string) error {
-	fmt.Printf("RemoveAuthorize: %s\n", code)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	delete(s.authorize, code)
 	return nil
 }
 
 func (s *MemStorage) SaveAccess(data *osin.AccessData) error {
-	fmt.Printf("SaveAccess: %s\n", data.AccessToken)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.access[data.AccessToken] = data
 	if data.RefreshToken != "" {
 		s.refresh[data.RefreshToken] = data.AccessToken
@@ -74,7 +81,8 @@ func (s *MemStorage) SaveAccess(data *osin.AccessData) error {
 }
 
 func (s *MemStorage) LoadAccess(code string) (*osin.AccessData, error) {
-	fmt.Printf("LoadAccess: %s\n", code)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if d, ok := s.access[code]; ok {
 		return d, nil
 	}
@@ -82,13 +90,15 @@ func (s *MemStorage) LoadAccess(code string) (*osin.AccessData, error) {
 }
 
 func (s *MemStorage) RemoveAccess(code string) error {
-	fmt.Printf("RemoveAccess: %s\n", code)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	delete(s.access, code)
 	return nil
 }
 
 func (s *MemStorage) LoadRefresh(code string) (*osin.AccessData, error) {
-	fmt.Printf("LoadRefresh: %s\n", code)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if d, ok := s.refresh[code]; ok {
 		return s.LoadAccess(d)
 	}
@@ -96,7 +106,8 @@ func (s *MemStorage) LoadRefresh(code string) (*osin.AccessData, error) {
 }
 
 func (s *MemStorage) RemoveRefresh(code string) error {
-	fmt.Printf("RemoveRefresh: %s\n", code)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	delete(s.refresh, code)
 	return nil
 }

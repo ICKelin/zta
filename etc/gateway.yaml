@@ -9,5 +9,14 @@ http_routes:
       "api": "http://127.0.0.1:9180",
       "key": "edd1c9f034335f136f87ad84b625c8f1"
     }
+
+http_authenticate:
+  OIDC: |
+    {
+      "issuer": "http://oidc.zta.beyondnetwork.net:14001",
+      "private_key_file": "/opt/apps/zta/certs/oidc.key",
+      "public_key_file": "/opt/apps/zta/certs/oidc.crt",
+      "listen_addr": ":14001"
+    }
 listener_file: /opt/apps/zta/etc/listener.json
 ssl_file: /opt/apps/zta/etc/ssl.json
