@@ -42,9 +42,11 @@ func main() {
 
 	// init authenticate, for example OIDCService
 	// use separate file for dynamic update, for example add/delete authenticate and users
-	err = authenticate.RunAuthenticateService(conf.HTTPAuthenticate)
-	if err != nil {
-		panic(err)
+	if conf.HTTPAuthenticate != "" {
+		err = authenticate.RunAuthenticateService(conf.HTTPAuthenticate)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// create ssl config
