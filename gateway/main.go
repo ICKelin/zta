@@ -13,8 +13,6 @@ func main() {
 	flag.StringVar(&confFile, "c", "", "config file")
 	flag.Parse()
 
-	//go runOIDCService()
-
 	// parse main config
 	conf, err := ParseConfig(confFile)
 	if err != nil {
@@ -22,6 +20,7 @@ func main() {
 	}
 
 	// parse listener config file
+	// use separate file for dynamic update, for example add/delete listener
 	listenerConfigs, err := ParseListenerConfig(conf.ListenerFile)
 	if err != nil {
 		panic(err)
@@ -41,12 +40,11 @@ func main() {
 		}
 	}
 
-	// init authenticate, for example OIDC
-	for authType, authConfig := range conf.HTTPAuthenticate {
-		err := authenticate.RunAuthenticateService(authType, json.RawMessage(authConfig))
-		if err != nil {
-			panic(err)
-		}
+	// init authenticate, for example OIDCService
+	// use separate file for dynamic update, for example add/delete authenticate and users
+	err = authenticate.RunAuthenticateService(conf.HTTPAuthenticate)
+	if err != nil {
+		panic(err)
 	}
 
 	// create ssl config
@@ -81,6 +79,7 @@ func main() {
 	if conf.AutoReload {
 		// watch listener file for add/delete listeners interval
 		go WatchListenerFile(gw, conf.ListenerFile, listenerMgr, sessionMgr, listenerConfigs)
+		go authenticate.WatchConfigChanges(conf.HTTPAuthenticate)
 	}
 	err = gw.ListenAndServe()
 	if err != nil {

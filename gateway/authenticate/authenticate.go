@@ -10,20 +10,27 @@ import (
 )
 
 var (
-	errNotSupportedAuthType = errors.New("not supported auth type")
+	errNotSupportedAuthType    = errors.New("not supported auth type")
+	errAuthTypeAlreadyRegister = errors.New("auth type already registered")
+	authenticates              = make(map[string]Authenticate)
 )
 
+// UserInfo for authenticate user profile
 type UserInfo struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
 }
 
+// Authenticate provides http authenticate
 type Authenticate interface {
+	// AddClient add a client(eg: apisix)
 	AddClient(clientID, clientSecret, redirectUri string)
+	// AddUser add a user into client
 	AddUser(clientID string, userInfo *UserInfo)
 }
 
+// IDToken is the oidc id information reply for exchange code
 type IDToken struct {
 	Issuer     string `json:"iss"`
 	UserID     string `json:"sub"`
@@ -35,13 +42,47 @@ type IDToken struct {
 	Name       string `json:"name,omitempty"`
 }
 
-type replyBody struct {
-	Code    int         `json:"code"`
-	Data    interface{} `json:"data"`
-	Message string      `json:"message"`
+// RunAuthenticateService base on config file
+func RunAuthenticateService(confFile string) error {
+	content, err := os.ReadFile(confFile)
+	if err != nil {
+		return err
+	}
+
+	var configs = make([]map[string]interface{}, 0)
+	err = json.Unmarshal(content, &configs)
+	if err != nil {
+		return err
+	}
+
+	for _, config := range configs {
+		configBytes, _ := json.Marshal(config)
+		// just panic if type assert fail
+		id := config["id"].(string)
+		authType := config["type"].(string)
+		err := runAuthenticateService(id, authType, configBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func RunAuthenticateService(authType string, conf json.RawMessage) error {
+// WatchConfigChanges watch for config file update interval
+// support:
+//   - add/del clients
+//   - add/del client users
+//
+// TODO:
+func WatchConfigChanges(confFile string) {
+}
+
+func runAuthenticateService(id, authType string, conf json.RawMessage) error {
+	if _, ok := authenticates[authType]; ok {
+		return errAuthTypeAlreadyRegister
+	}
+
 	switch authType {
 	case "OIDC":
 		oidc, err := NewOIDC(conf)
@@ -49,6 +90,7 @@ func RunAuthenticateService(authType string, conf json.RawMessage) error {
 			return err
 		}
 		go oidc.Serve()
+		authenticates[id] = oidc
 	default:
 		return errNotSupportedAuthType
 	}
@@ -98,6 +140,12 @@ func loadJws(privateKeyFile, publicKeyFile string) (jose.Signer, []byte, error) 
 	}
 
 	return jwtSigner, publicKeyBytes, nil
+}
+
+type replyBody struct {
+	Code    int         `json:"code"`
+	Data    interface{} `json:"data"`
+	Message string      `json:"message"`
 }
 
 // reply to web browser

@@ -3,6 +3,7 @@ module github.com/ICKelin/zta
 go 1.22.2
 
 require (
+	github.com/agiledragon/gomonkey/v2 v2.12.0
 	github.com/alecthomas/gometalinter v3.0.0+incompatible
 	github.com/astaxie/beego v1.12.3
 	github.com/go-jose/go-jose/v4 v4.0.4

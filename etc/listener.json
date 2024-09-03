@@ -1,15 +1,5 @@
 [
   {
-    "id": "1",
-    "client_id": "test-client",
-    "public_protocol": "tcp",
-    "public_ip": "0.0.0.0",
-    "public_port": 10000,
-    "internal_protocol": "tcp",
-    "internal_ip": "127.0.0.1",
-    "internal_port": 2000
-  },
-  {
     "id": "2",
     "client_id": "test-client",
     "public_protocol": "tcp",
@@ -39,30 +29,6 @@
         "type": "roundrobin",
         "nodes": {
           "127.0.0.1:10002": 1
-        }
-      }
-    }
-  },
-  {
-    "id": "4",
-    "client_id": "oidc-test",
-    "public_protocol": "http",
-    "public_ip": "127.0.0.1",
-    "public_port": 10003,
-    "internal_protocol": "tcp",
-    "internal_ip": "127.0.0.1",
-    "internal_port": 2004,
-    "http_route_type": "apisix",
-    "http_param": {
-      "id": "zta_localhost_10003",
-      "uri": "/*",
-      "hosts": [
-        "app1.zta.beyondnetwork.net"
-      ],
-      "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-          "127.0.0.1:10003": 1
         }
       }
     }

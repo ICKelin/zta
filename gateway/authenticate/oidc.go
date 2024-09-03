@@ -48,6 +48,7 @@ type ClientInfo struct {
 }
 
 type OIDCConfig struct {
+	ID             string        `json:"id"`
 	Issuer         string        `json:"issuer"`
 	ListenAddr     string        `json:"listen_addr"`
 	PrivateKeyFile string        `json:"private_key_file"`
