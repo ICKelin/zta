@@ -53,6 +53,7 @@ type OIDCConfig struct {
 	ListenAddr     string        `json:"listen_addr"`
 	PrivateKeyFile string        `json:"private_key_file"`
 	PublicKeyFile  string        `json:"public_key_file"`
+	StaticFolder   string        `json:"static_folder"`
 	Clients        []*ClientInfo `json:"clients"`
 }
 
@@ -113,7 +114,7 @@ func NewOIDC(rawConf json.RawMessage) (*OIDC, error) {
 }
 
 func (o *OIDC) Serve() error {
-	http.Handle("/", http.FileServer(http.Dir("./web")))
+	http.Handle("/", http.FileServer(http.Dir(o.conf.StaticFolder)))
 
 	http.HandleFunc("/.well-known/openid-configuration", o.handleDiscovery)
 	http.HandleFunc("/publickeys", o.handlePublicKeys)

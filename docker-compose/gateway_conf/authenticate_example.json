@@ -6,6 +6,7 @@
     "private_key_file": "/opt/apps/zta/etc/certs/oidc.key",
     "public_key_file": "/opt/apps/zta/etc/certs/oidc.crt",
     "listen_addr": ":14001",
+    "static_folder": "/opt/apps/zta/web",
     "clients": [
       {
         "client_id": "test_app_id",
