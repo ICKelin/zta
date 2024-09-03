@@ -1,0 +1,12 @@
+gateway:
+  listen_addr: ":12359"
+
+http_routes:
+  apisix: |
+    {
+      "api": "http://127.0.0.1:9180",
+      "key": "edd1c9f034335f136f87ad84b625c8f1"
+    }
+http_authenticate: /opt/apps/zta/etc/authenticate_example.json
+listener_file: /opt/apps/zta/etc/listener_example.json
+ssl_file: /opt/apps/zta/etc/ssl_example.json

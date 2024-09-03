@@ -23,7 +23,7 @@ services:
     network_mode: host
 
   zta:
-    image: ickelin/zta:latest
+    image: ickelin/zta:v0.0.1-milestone3
     restart: always
     volumes:
       - ./gateway_conf:/opt/apps/zta/etc

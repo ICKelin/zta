@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "type": "OIDC",
+    "issuer": "http://oidc.zta.beyondnetwork.net:14001",
+    "private_key_file": "/opt/apps/zta/etc/certs/oidc.key",
+    "public_key_file": "/opt/apps/zta/etc/certs/oidc.crt",
+    "listen_addr": ":14001",
+    "clients": [
+      {
+        "client_id": "test_app_id",
+        "client_secret": "it is a secret",
+        "redirect_uri": "http://app2.zta.beyondnetwork.net:9080/.apisix/redirect",
+        "users": [
+          {
+            "username": "username",
+            "password": "password"
+          }
+        ]
+      }
+    ]
+  }
+]

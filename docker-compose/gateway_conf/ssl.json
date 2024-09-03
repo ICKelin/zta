@@ -1,8 +1,1 @@
-[
-  {
-    "id": "1",
-    "cert_file": "/opt/apps/zta/etc/certs/hulu2.byc.net.crt",
-    "key_file": "/opt/apps/zta/etc/certs/hulu2.byc.net.key",
-    "snis": ["hulu2.byc.net"]
-  }
-]
+[]

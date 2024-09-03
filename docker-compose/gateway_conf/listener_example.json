@@ -1,0 +1,43 @@
+[
+  {
+    "client_id": "test-client",
+    "public_protocol": "tcp",
+    "public_ip": "0.0.0.0",
+    "public_port": 10000,
+    "internal_protocol": "tcp",
+    "internal_ip": "127.0.0.1",
+    "internal_port": 2000
+  },
+  {
+    "client_id": "test-client",
+    "public_protocol": "tcp",
+    "public_ip": "0.0.0.0",
+    "public_port": 10001,
+    "internal_protocol": "tcp",
+    "internal_ip": "127.0.0.1",
+    "internal_port": 2001
+  },
+  {
+    "client_id": "test-client",
+    "public_protocol": "http",
+    "public_ip": "127.0.0.1",
+    "public_port": 10002,
+    "internal_protocol": "tcp",
+    "internal_ip": "127.0.0.1",
+    "internal_port": 2002,
+    "http_route_type": "apisix",
+    "http_param": {
+      "id": "zta_localhost_10002",
+      "uri": "/*",
+      "hosts": [
+        "hulu2.byc.net"
+      ],
+      "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+          "127.0.0.1:10002": 1
+        }
+      }
+    }
+  }
+]
