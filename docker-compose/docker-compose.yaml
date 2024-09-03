@@ -27,6 +27,7 @@ services:
     restart: always
     volumes:
       - ./gateway_conf:/opt/apps/zta/etc
+      - ./web:/opt/apps/zta/web
     network_mode: host
     environment:
       TIME_ZONE: Asia/Shanghai

@@ -218,8 +218,6 @@ func (o *OIDC) handleToken(w http.ResponseWriter, r *http.Request) {
 	resp := o.server.NewResponse()
 	defer resp.Close()
 
-	fmt.Println("request token...")
-
 	ar := o.server.HandleAccessRequest(resp, r)
 	if ar == nil {
 		logs.Error("handle access request fail: %v", resp.InternalError)
