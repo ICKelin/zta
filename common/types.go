@@ -11,6 +11,7 @@ const (
 	version      = 0
 	cmdPP        = 0x0
 	cmdHandshake = 0x1
+	cmdUDPPacket = 0x02
 )
 
 // 私有协议头部
@@ -123,4 +124,41 @@ func (req *HandshakeReq) Decode(reader io.Reader) error {
 	}
 
 	return nil
+}
+
+type UDPPacket []byte
+
+func (p UDPPacket) Encode() ([]byte, error) {
+	hdr := make([]byte, 4)
+	hdr[0] = version
+	hdr[1] = cmdUDPPacket
+
+	binary.BigEndian.PutUint16(hdr[2:4], uint16(len(p)))
+	return append(hdr, p...), nil
+}
+
+func (p UDPPacket) Decode(reader io.Reader) (int, error) {
+	hdr := make([]byte, 4)
+	hdr[0] = version
+	hdr[1] = cmdUDPPacket
+
+	_, err := io.ReadFull(reader, hdr)
+	if err != nil {
+		return 0, err
+	}
+
+	cmd := hdr[1]
+	if cmd != cmdUDPPacket {
+		return 0, fmt.Errorf("invalid udp packet cmd")
+	}
+
+	bodyLen := binary.BigEndian.Uint16(hdr[2:4])
+
+	_, err = io.ReadFull(reader, p[:bodyLen])
+	if err != nil {
+		return 0, err
+
+	}
+
+	return int(bodyLen), nil
 }

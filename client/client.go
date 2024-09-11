@@ -90,19 +90,75 @@ func (c *Client) handleStream(stream net.Conn) {
 	case "tcp":
 		localConn, err = net.Dial("tcp", fmt.Sprintf("%s:%d", pp.InternalIP, pp.InternalPort))
 		if err != nil {
-			logs.Error("connecto to local fail: %v", err)
+			logs.Error("connect to to local fail: %v", err)
 			return
 		}
 		defer localConn.Close()
+
+		// 双向数据拷贝
+		go func() {
+			defer localConn.Close()
+			defer stream.Close()
+			io.Copy(localConn, stream)
+		}()
+		io.Copy(stream, localConn)
+
+	case "udp":
+		localConn, err = net.Dial("udp", fmt.Sprintf("%s:%d", pp.InternalIP, pp.InternalPort))
+		if err != nil {
+			logs.Error("connect to to local fail: %v", err)
+			return
+		}
+		defer localConn.Close()
+
+		// read local conn
+		go func() {
+			defer localConn.Close()
+			defer stream.Close()
+			buf := make([]byte, 1024*64)
+			for {
+				nr, err := localConn.Read(buf)
+				if err != nil {
+					logs.Error("read udp from local fail %v", err)
+					break
+				}
+
+				logs.Debug("read %d bytes from local connect", nr)
+				// udp packet编码
+				p := common.UDPPacket(buf[:nr])
+				body, err := p.Encode()
+				if err != nil {
+					logs.Warn("encode udp packet fail: %v", err)
+					break
+				}
+
+				_, err = stream.Write(body)
+				if err != nil {
+					logs.Warn("write udp to stream fail: %v", err)
+					break
+				}
+			}
+		}()
+
+		// read stream
+		p := common.UDPPacket(make([]byte, 1024*64))
+		for {
+			nr, err := p.Decode(stream)
+			if err != nil {
+				logs.Warn("decode udp from stream fail: %v", err)
+				break
+			}
+
+			logs.Debug("read from stream %d bytes", nr)
+			_, err = localConn.Write(p[:nr])
+			if err != nil {
+				logs.Warn("write udp to local conn fail: %v", err)
+				break
+			}
+		}
+
 	default:
 		logs.Warn("unsupported protocol %s", pp.InternalProtocol)
 	}
 
-	// 双向数据拷贝
-	go func() {
-		defer localConn.Close()
-		defer stream.Close()
-		io.Copy(localConn, stream)
-	}()
-	io.Copy(stream, localConn)
 }
