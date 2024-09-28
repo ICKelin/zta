@@ -61,6 +61,8 @@ http_routes:
       "api": "http://127.0.0.1:9180",
       "key": "edd1c9f034335f136f87ad84b625c8f1"
     }
+# http身份认证配置
+http_authenticate: /opt/apps/zta/etc/authenticate.json
 
 # 内网穿透配置
 listener_file: /opt/apps/zta/etc/listener.json
@@ -69,13 +71,13 @@ listener_file: /opt/apps/zta/etc/listener.json
 ssl_file: /opt/apps/zta/etc/ssl.json
 ```
 
-- listener.json: 内网穿透配置，支持tcp，http和https
+- listener.json: 内网穿透配置，支持tcp，udp，http和https
 ```yaml
 [
   {
     # 客户端ID
     "client_id": "test-client",
-    # 公网协议（tcp/http/https）
+    # 公网协议（tcp/udp/http/https）
     "public_protocol": "tcp",
     # 监听ip(tcp用0.0.0.0，http，https用127.0.0.1)
     "public_ip": "0.0.0.0",
@@ -112,6 +114,50 @@ ssl_file: /opt/apps/zta/etc/ssl.json
         }
       }
     }
+  }
+]
+```
+
+- ssl.json, https证书和密钥配置
+
+```json
+[
+  {
+    "id": "1",
+    # 证书文件
+    "cert_file": "/opt/apps/zta/etc/certs/hulu2.byc.net.crt",
+    # 密钥文件
+    "key_file": "/opt/apps/zta/etc/certs/hulu2.byc.net.key",
+    # sni列表
+    "snis": ["hulu2.byc.net"]
+  }
+]
+```
+
+- authenticate.json 身份认证服务配置,如果需要使用自身的基于OIDC的身份认证，可以使用该配置，需要对OIDC有所了解
+```json
+[
+  {
+    "id": "1",
+    "type": "OIDC",
+    "issuer": "http://oidc.zta.beyondnetwork.net:14001",
+    "private_key_file": "/opt/apps/zta/etc/certs/oidc.key",
+    "public_key_file": "/opt/apps/zta/etc/certs/oidc.crt",
+    "listen_addr": ":14001",
+    "static_folder": "/opt/apps/zta/web",
+    "clients": [
+      {
+        "client_id": "test_app_id",
+        "client_secret": "it is a secret",
+        "redirect_uri": "http://app2.zta.beyondnetwork.net:9080/.apisix/redirect",
+        "users": [
+          {
+            "username": "username",
+            "password": "password"
+          }
+        ]
+      }
+    ]
   }
 ]
 ```
