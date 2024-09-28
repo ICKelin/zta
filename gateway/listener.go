@@ -101,6 +101,7 @@ type Listener struct {
 	closeOnce         sync.Once
 	close             chan struct{}
 	tcpListener       net.Listener
+	udpListener       *net.UDPConn
 	udpSessionManager *udpSessionManager
 }
 
@@ -175,6 +176,7 @@ func (l *Listener) listenAndServeUDP() error {
 	}
 	defer listener.Close()
 
+	l.udpListener = listener
 	go func() {
 		tick := time.NewTicker(time.Second * 10)
 		defer tick.Stop()
@@ -303,11 +305,11 @@ func (l *Listener) handleUDPMsg(listener *net.UDPConn, raddr *net.UDPAddr, buffe
 	// since tunnel connection is stream orient
 	// we need to encode a private header to mark different diagram packet
 	// for example:
-	//  topology: outer udp client ---udp--->[server ---tunnel connect---> client ]---udp---> udp server
+	//  topology: outer udp client ---udp--->[server ---tunnel connect---> client]---udp---> udp server
 	// 	1、outer send 1000 bytes via udp to server
 	// 	2、outer send another 1000 bytes via udp to server
 	//	3、for server, it reads two msg
-	//	4、server sends these two msg to client vial tunnel client
+	//	4、server sends these two msg to client via tunnel client
 	//	5、since tunnel connection is stream, the client may read 1000+1000 bytes
 	//	data at the same time, and sends 2000 bytes to the inner udp server, this may cause exception,
 	//	since the outer wants to send two msg, each msg is 1000 bytes, not one msg with 2000 bytes
@@ -348,6 +350,9 @@ func (l *Listener) Close() {
 		close(l.close)
 		if l.tcpListener != nil {
 			l.tcpListener.Close()
+		}
+		if l.udpListener != nil {
+			l.udpListener.Close()
 		}
 	})
 }
