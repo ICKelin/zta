@@ -9,13 +9,14 @@
 - [B站——呼噜聊网络](https://www.bilibili.com/video/BV1hFY7ekEiC)
 - [Youtube——呼噜聊网络](https://www.youtube.com/watch?v=uQLmmzyrS94&list=PLp5HQrfSZFiogfdDhlXjgxoWAIwiqqtAh)
 
-| 里程碑   | 功能描述                          | 状态 | 参考视频                                                                                                                                                   |
-|:------|:------------------------------|:---|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| MVP版本 | 完成最简单的TCP内网穿透                 | ✔  | [自己动手实现一个内网穿透3：MVP版本发布](https://www.bilibili.com/video/BV1x4YqedEQx/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326)                 |
-| HTTP内网穿透 | 结合Apisix实现一个内网穿透，实现复用80和443端口 | ✔  | [自己动手实现一个内网穿透5：里程碑2，接入Apisix实现HTTP内网穿透](https://www.bilibili.com/video/BV1eaegehEHj/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326) |
+| 里程碑           | 功能描述                          | 状态 | 参考视频                                                                                                                                                   
+|:--------------|:------------------------------|:---|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| MVP版本         | 完成最简单的TCP内网穿透                 | ✔  | [自己动手实现一个内网穿透3：MVP版本发布](https://www.bilibili.com/video/BV1x4YqedEQx/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326)                 |
+| HTTP内网穿透      | 结合Apisix实现一个内网穿透，实现复用80和443端口 | ✔  | [自己动手实现一个内网穿透5：里程碑2，接入Apisix实现HTTP内网穿透](https://www.bilibili.com/video/BV1eaegehEHj/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326) |
 | HTTP内网穿透+身份认证 | 基于OIDC协议实现身份认证功能，保护内网穿透的数据安全  | ✔  | [自己动手实现一个内网穿透8】里程碑3，给HTTP内网穿透加身份认证](https://www.bilibili.com/video/BV1Q8WkedEsu/?share_source=copy_web&vd_source=b1d8575a4fa690d0b8f9b65d05249326)     |
-| TCP内网穿透+身份认证 | 实现原生TCP应用的身份认证功能              | ❌  |                                                                                                                                                        |
-| 可视化，安全防火方面的功能 | 内容待定                          | ❌  |                                                                                                                                                        |
+| TCP内网穿透+身份认证  | 实现原生TCP应用的身份认证功能              |  ✔ | [自己动手实现一个内网穿透10】最后一个里程碑，TCP的身份认证](https://www.bilibili.com/video/BV1V9pzeSEBd/)                                                                        |
+| 加餐: UDP内网穿透实现 | 实现UDP的内网穿透 | ✔ | [应网友需求，增加UDP的实现](https://www.bilibili.com/video/BV1sN4BeMEFk)  |
+| 可视化，安全防护方面的功能 | 内容待定                          | ❌  |                           |
 
 ## 运行
 ### 二进制文件运行
@@ -36,14 +37,14 @@ nohup ./zta-gw_linux_amd64 -c gateway.yaml &
 ```shell
 ./zta-gw_darwin_amd64 -client_id=客户端id -server_addr=服务端IP:端口
 ```
- 
+
 ## docker方式运行（推荐）
 
 ```shell
 cd docker-compose 
 docker-compose up --build -d
 ```
- 
+
 ## 配置详解
 
 - gateway.yaml: 主配置文件
@@ -60,7 +61,7 @@ http_routes:
       "api": "http://127.0.0.1:9180",
       "key": "edd1c9f034335f136f87ad84b625c8f1"
     }
-    
+
 # 内网穿透配置
 listener_file: /opt/apps/zta/etc/listener.json
 
