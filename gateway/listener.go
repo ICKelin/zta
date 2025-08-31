@@ -348,11 +348,18 @@ func (l *Listener) udpReadFromClient(tunnelConn net.Conn, raddr *net.UDPAddr, co
 func (l *Listener) Close() {
 	l.closeOnce.Do(func() {
 		close(l.close)
+	})
+}
+
+func (l *Listener) listenForCloseSignal() {
+	select {
+	case <-l.close:
+		logs.Debug("Received close signal, shutting down...")
 		if l.tcpListener != nil {
 			l.tcpListener.Close()
 		}
 		if l.udpListener != nil {
 			l.udpListener.Close()
 		}
-	})
+	}
 }
