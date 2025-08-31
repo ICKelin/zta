@@ -71,6 +71,7 @@ func main() {
 				logs.Error("listener %s serve fail: %v", listenerConfig.ID, err)
 			}
 		}()
+		go listener.listenForCloseSignal()
 		listenerMgr.AddListener(listenerConfig.ID, listener)
 		clientIDs = append(clientIDs, listenerConfig.ClientID)
 	}
